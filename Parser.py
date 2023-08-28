@@ -8,7 +8,7 @@ class MyHTMLParser(HTMLParser):
         self.current_teacher = {
             'name': '',
             'department': '',
-            'Photo_Path': ''
+            'Photo_Url': ''
         }
         self.is_department_info = False
         self.is_teacher_info = False  # 用于判断是否在老师信息标签内
@@ -25,13 +25,12 @@ class MyHTMLParser(HTMLParser):
             if tag =='img':
                 for attr in attrs:
                     if attr[0] == 'src':
-                        self.current_teacher['Photo_Path'] = attr[1]
+                        self.current_teacher['Photo_Url'] = attr[1]
             elif tag=='span':
                 if ('class','name') in attrs:
                     self.is_teacher_name = True
                 elif ('class','iden') in attrs:
                     self.is_teacher_iden = True
-
 
     def handle_endtag(self, tag):
         if tag == 'title':
@@ -56,31 +55,25 @@ class MyHTMLParser(HTMLParser):
                 teacher = Teacher(self.teacher_identity,
                               self.current_teacher['name'],
                               self.current_teacher['department'],
-                              self.current_teacher['Photo_Path'])
+                              self.current_teacher['Photo_Url'])
                 self.teachers.append(teacher)
                 self.current_teacher = {
                     'name': '',
                     'department': '',
-                    'Photo_Path': ''
+                    'Photo_Url': ''
                 }
 
-
-
-def GetFiles():
+def ParseFiles():
+    parser = MyHTMLParser()
     folder_path = './WebResource'
     for file_name in os.listdir(folder_path):
         if file_name.endswith('.htm') or file_name.endswith('.html'):
             file_path = os.path.join(folder_path,file_name)
-            ParseFiles(file_path)
-
-def ParseFiles(file_path):
-    pass
+            with open(file_path, "r", encoding="utf-8") as html_file:
+                html_content = html_file.read()
+                parser.feed(html_content)
+    return parser.teachers
 
 if __name__ == '__main__':
-    parser = MyHTMLParser()
-
-    with open("./WebResource/professor.htm", "r", encoding="utf-8") as html_file:
-        html_content = html_file.read()
-        parser.feed(html_content)
-    teachers_data = parser.teachers
+    teachers_data = ParseFiles()
     print(teachers_data)
