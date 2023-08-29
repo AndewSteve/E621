@@ -3,8 +3,9 @@ import os
 from Teacher import Teacher
 from DataManager import TeacherDataWriter   
 class MyHTMLParser(HTMLParser):
-    def __init__(self):
+    def __init__(self,downloadImg = False):
         super().__init__()
+        self.downloadImg = downloadImg
         self.dataWriter = TeacherDataWriter()
         self.teachers = []
         self.current_teacher = {
@@ -67,7 +68,7 @@ class MyHTMLParser(HTMLParser):
                         self.current_teacher['name'],
                         self.current_teacher['department'],
                         self.current_teacher['Photo_Url'],
-                        downloadImg= False)
+                        downloadImg= self.downloadImg)
         self.teachers.append(teacher)
         if len(self.teachers) >=5:
             self.clearTeachersBuffer()
@@ -77,14 +78,16 @@ class MyHTMLParser(HTMLParser):
             'Photo_Url': ""
         }
 
-def ParseFiles(resource_folder_path = "./WebResource"):
-    parser = MyHTMLParser()
+def ParseFiles(downloadImg= False,resource_folder_path = "./WebResource"):
+    parser = MyHTMLParser(downloadImg)
     for file_name in os.listdir(resource_folder_path):
         if file_name.endswith(".htm") or file_name.endswith(".html"):
             file_path = os.path.join(resource_folder_path,file_name)
             with open(file_path, "r", encoding="utf-8") as html_file:
+                print(f'正在读取文件：{file_name}')
                 html_content = html_file.read()
                 parser.feed(html_content)
+                print(f'文件爬取完毕：{file_name}')
 
 if __name__ == '__main__':
     ParseFiles()
