@@ -1,18 +1,20 @@
 from html.parser import HTMLParser
 import os
 from Teacher import Teacher
+from DataManager import TeacherDataWriter   
 class MyHTMLParser(HTMLParser):
     def __init__(self):
         super().__init__()
-        self.teachers = []  # 用于存储老师信息
+        self.dataWriter = TeacherDataWriter()
+        self.teachers = []
         self.current_teacher = {
-            'name': '',
-            'department': '',
-            'Photo_Url': ''
+            'name': "",
+            'department': "",
+            'Photo_Url': ""
         }
         self.is_department_info = False
-        self.is_teacher_info = False  # 用于判断是否在老师信息标签内
-        self.teacher_identity = '教授'
+        self.is_teacher_info = False
+        self.teacher_identity = "教授"
         self.is_teacher_name = False
         self.is_teacher_iden = False
 
@@ -33,6 +35,8 @@ class MyHTMLParser(HTMLParser):
                     self.is_teacher_iden = True
 
     def handle_endtag(self, tag):
+        if tag == 'html':
+            self.clearTeachersBuffer()
         if tag == 'title':
             self.is_department_info = False
         if tag == 'div' and self.is_teacher_info:
@@ -52,28 +56,36 @@ class MyHTMLParser(HTMLParser):
                 self.current_teacher['name'] = data.strip()
             elif self.is_teacher_iden:
                 self.current_teacher['department'] = data.strip()
-                teacher = Teacher(self.teacher_identity,
-                              self.current_teacher['name'],
-                              self.current_teacher['department'],
-                              self.current_teacher['Photo_Url'])
-                self.teachers.append(teacher)
-                self.current_teacher = {
-                    'name': '',
-                    'department': '',
-                    'Photo_Url': ''
-                }
+                self.pushTeacherBuffer()
 
-def ParseFiles():
+    def clearTeachersBuffer(self):
+        self.dataWriter.writeMultiTeacherData(self.teachers)
+        self.teachers = []
+
+    def pushTeacherBuffer(self):
+        teacher = Teacher(self.teacher_identity,
+                        self.current_teacher['name'],
+                        self.current_teacher['department'],
+                        self.current_teacher['Photo_Url'],
+                        downloadImg= False)
+        self.teachers.append(teacher)
+        if len(self.teachers) >=5:
+            self.clearTeachersBuffer()
+        self.current_teacher = {
+            'name': "",
+            'department': "",
+            'Photo_Url': ""
+        }
+
+def ParseFiles(resource_folder_path = "./WebResource"):
     parser = MyHTMLParser()
-    folder_path = './WebResource'
-    for file_name in os.listdir(folder_path):
-        if file_name.endswith('.htm') or file_name.endswith('.html'):
-            file_path = os.path.join(folder_path,file_name)
+    for file_name in os.listdir(resource_folder_path):
+        if file_name.endswith(".htm") or file_name.endswith(".html"):
+            file_path = os.path.join(resource_folder_path,file_name)
             with open(file_path, "r", encoding="utf-8") as html_file:
                 html_content = html_file.read()
                 parser.feed(html_content)
-    return parser.teachers
 
 if __name__ == '__main__':
-    teachers_data = ParseFiles()
-    print(teachers_data)
+    ParseFiles()
+    print()
